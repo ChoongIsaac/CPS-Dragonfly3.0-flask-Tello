@@ -135,8 +135,6 @@ def automated_commands():
     flash("Mission finish!", "info")
     return redirect(url_for('index'))
 
-    # return jsonify({'message': 'Commands executed successfully'}), 200
-
 
 
 if __name__ == '__main__':
