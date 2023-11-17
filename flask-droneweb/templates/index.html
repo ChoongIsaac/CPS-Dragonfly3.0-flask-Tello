@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Drone Control</title>
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #f7efef;
+        }
+        
+        .header {
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            background-color: #0400ff;
+        }
+        
+        .card {
+            padding: 20px;
+            background-color: #fff;
+            width: 1400px;
+            margin: 15px auto;
+            border-radius: 5px;
+            box-shadow: 1px 1px 10px rgba(0, 0, 0, .1);
+        }
+        
+        .form {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .form form button {
+            outline-style: none;
+            border: 1px solid #0400ff;
+            background-color: #0400ff;
+            color: #fff;
+            padding: 8px 20px;
+            font-size: 18px;
+            margin: 0 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .form form:nth-child(2) button {
+            background-color: transparent;
+            color: #0400ff;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px 10px;
+            border: none;
+            background-color: #0c0c0c;
+            color: #cccccc;
+            outline-style: none;
+            border-radius: 5px;
+            margin: 10px 0;
+            resize: vertical;
+        }
+        
+        #automated-command-form {
+            overflow: hidden;
+        }
+        
+        #automated-command-form button {
+            float: right;
+            color: #fff;
+            outline-style: none;
+            padding: 8px 15px;
+            border: none;
+            background-color: #0400ff;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+
+            
+        }
+        #drone-instructions {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 20px;
+        }
+
+        #drone-instructions h2 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        }
+
+        #drone-instructions ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        }
+
+        #drone-instructions li {
+        margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="header">CPS Dragonfly </h1>
+    <div class="card">
+        <p>Battery Status: {{battery_status}}</p>
+        <br>
+        
+        <div id="drone-instructions">
+            <h2>Instructions:</h2>
+            <ul>
+              <li>Press Arrow UP to move forward</li>
+              <li>Press Arrow DOWN to move backward</li>
+              <li>Press Arrow LEFT to move left</li>
+              <li>Press Arrow RIGHT to move right</li>
+              <li>Press I to move upward</li>
+              <li>Press k to move downward</li>
+              <li>Press J to rotate left</li>
+              <li>Press L to rotate right</li>
+            </ul>
+          </div>
+          <br>
+          <!-- Display flash messages -->
+        {% with messages = get_flashed_messages() %} {% if messages %}
+        <div class="flash-messages">
+            {% for message in messages %}
+            <p class="flash-message">{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+    </div>
+    
+    <div class="form">
+        <form method="post" action="/takeoff">
+            <button type="submit">Takeoff</button>
+        </form>
+        <form method="post" action="/land">
+            <button type="submit">Land</button>
+        </form>
+
+    </div>
+
+    
+    <div class="card">
+        <h1>Automated Drone Control</h1>
+        <br>
+        <p> Please insert the command line by line to automate the drone.</p>
+        <br>
+        <form id = "automated-command-form" action="/automated" method="POST">
+            <textarea id="command-input" name="commands" rows="4" placeholder="Enter commands"></textarea>
+            <button type="submit">Automate</button>
+        
+        </form>
+    </div>
+   
+    
+
+    <!-- Video Stream -->
+    <div class="card">
+        <h2>Detected Barcode:</h2>
+        <br>
+        <ul id="barcode-list"></ul>
+        <br>
+        <h2> Video Stream</h2>
+        <br>
+        <img id="video-stream" src="{{ url_for('video_feed') }}" alt="Video Stream" width="960" height="720">
+    </div>
+
+
+
+    <script>
+        var videoStream = document.getElementById("video-stream");
+        var detectedBarcodes = [];
+        var barcodeList = document.getElementById("barcode-list");
+
+        setInterval(function() {
+            videoStream.src = "{{ url_for('video_feed') }}?" + new Date().getTime();
+        }, 1000); // Update every 1 second
+
+
+            function updateBarcode() {
+                fetch("/read_scan_code")
+                    .then(response => response.text())
+                    .then(data => {
+                        if (data.trim() !== "") {
+                            if (!detectedBarcodes.includes(data)) {
+                                detectedBarcodes.push(data);
+                                var barcodeItem = document.createElement("li");
+                                barcodeItem.textContent = data;
+                                barcodeList.appendChild(barcodeItem);
+                            }
+                        }
+                    });
+
+            }
+        
+        // Update barcode data every 1 second
+        setInterval(updateBarcode, 1000);
+
+
+        document.addEventListener('keydown', function(event) {
+            console.log('Key pressed: ' + event.key); // Add this line
+
+            var command = '';
+            switch (event.key) {
+                case 'ArrowUp':
+                    command = 'move_forward';
+                    break;
+                case 'ArrowDown':
+                    command = 'move_backward';
+                    break;
+                case 'ArrowLeft':
+                    command = 'move_left';
+                    break;
+                case 'ArrowRight':
+                    command = 'move_right';
+                    break;
+                case 'i':
+                    command = 'move_up';
+                    break;
+                case 'k':
+                    command = 'move_down';
+                    break;
+                case 'j':
+                    command = 'rotate_left';
+                    break;
+                case 'l':
+                    command = 'rotate_right';
+                    break;
+            }
+
+            if (command) {
+                fetch('/send_command', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            command: command
+                        })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            console.log('Command sent: ' + command);
+                        } else {
+                            console.error('Failed to send command: ' + command);
+                        }
+                    });
+            }
+        });
+
+        
+window.addEventListener("keydown", function(e) {
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+        e.preventDefault();
+    }
+}, false);
+    </script>
+</body>
+
+</html>

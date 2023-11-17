@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "cps-dragonfly",
+  "private_key_id": "96f4336104bfaab1bf76019734e8f77ba757be9c",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDEfvebx55xlTbR\nqTZUGU4K0+HDr5a7Ch9zYmCxpj0OlhyF8PwDYRtfcVxHsvTgjK8TM0YyPYu2w7bs\npbk7bSijPt+iLE7D4Fqwhir+wRWHhFeOc7CZq4+PrYEj/d3ZL13IWGZ1Ifk2nQuT\nDU6Eo3PausQll6Cnhkm8SvwJv3MwtzPrpzZi0uicMWq+ANs9YH9Qi9EwUyuSILNQ\nJ2GFuPo8sY6S+di7iU//s2o9YZFAcfuVICfNT5DsEmDYWU/kLcVhZKufkvConW+0\nIVATxI1XoPJ+YeHtF+urslnXRi68wp7jykyE6YUvLF8jY10QnB3AA62O2PCOeUmv\noVhAFgQ7AgMBAAECgf86t7ZGVuCCEJTREj+p4eXwVmCgmVfxjJTZZgx/Ca41LaZY\nYCru15XWb4mj41ZJw8CNfET9vmaBtvpyvRMdLwF1xtQNIjBnWCPBnFY8ynYkiOeh\nKfEb+qhrxu1QVAx3WjAsLj5vwjc2mrdauh88g5ubQTRcB3N6nCZsnfuy7gL+Czq7\n58PrY3V3/tHFl6L5d2BrDcoflTmUxiTq6p8SfQkjsTtEKQD5tj+BpOe8W+Tgj5il\nRYG69QfSclxzMs42+MmhVCcuSpd9Jgg59P6x1W7UYm5x/RgXlefMjv/RjNRXnK8Z\nv4z7VcXfldSdHKEb+fW94OFSBipPPcBZqL1J6iUCgYEA7KbMRQleMz1TD9+lN+5I\n2ZTjawwBlOy4yJDTTUnl+Aj0vZV6rmJN0fNqwR8UBHhppTYHXARigmOEdtXU2E/m\nB8SAyIfJrznSqyusLmntS5YwWtODwaLXSH3avSGahL5tYqUvf1lAGID++SabvSgR\nowqqo1X0mZnQUWtVW2byG20CgYEA1I+yycdfXSsnAvfAVh45nBSR88Vfe1NsLrUW\nCjt08rcoVU/YnViCsS/IHqTywzTxAFjYtFqdixbaRLVZyC71vvHVjbpF1Wj337kE\nSVAPuAGh6jlbfAu+IrqC9CCXFxyldhhZCk8ubaf1gBe+cf3wUCX+R3ce8x7Nk5GQ\nSf1vbUcCgYA6M5ONbw5h37Ur9D74EHyONpXv39YLwGR5v1SYb5JFfD5k2fyAIuEs\nv4cD1BbiOpMQ9Ma+lL19f+g2KcTdJllWk7dwmiS6Gah8PJNuHtMjgd6Gl/qRhvEX\nfQxs83TDLOpOFn4l/ddLr34F3L70uIQN6zOoVB2CIVggjhtCDYGByQKBgQCwCaJE\nQf3Up1xTtONxbu6/OLn3bUq6VEiQFiD+sGcWbGHW5Z28EgWKwMu3tVvoFvxREUPH\nehRnkLGLnbWReHLFhHscOVyEdb5zZkMKhGfAOHnkBUSi4wbAtD6n+CWpWmwd9eQo\nCZOl9Sf4wbFTrr9LYWvJu/nB14zh3ffljyKtGQKBgQCtNXSxAxZsAAxj7iBp84Wa\nSOx/cwExoa8rMBE93QoeZVkuVLMJ6JMqlRtaCnJ1vgkWkp9Z+CM00UkRM59m0iG/\nBZ5V7YQxf/UirP2ipyIpaamQOJ4fuFkpVZGoK9zwKZA1sfx/euiRNDYz0VYkvEXC\n3LEu/m9BV1PdgOPmdXs86w==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-vpg0n@cps-dragonfly.iam.gserviceaccount.com",
+  "client_id": "101073247157245674680",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-vpg0n%40cps-dragonfly.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
