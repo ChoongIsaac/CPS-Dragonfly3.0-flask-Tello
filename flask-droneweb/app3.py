@@ -8,41 +8,33 @@ app = Flask(__name__)
 app.secret_key = "your_secret_key_here" 
 CORS(app)
 drone_in_flight = False
+message = ''
 #drone_controller = DroneController()
 
-@app.route('/')
-def index():
+@app.route('/battery', methods=['GET'])
+def get_battery_status():
     battery_status = drone_controller.get_battery()
-    return render_template('index.html',battery_status=battery_status)
-
+    return jsonify(battery_status)
 
 @app.route('/takeoff', methods=['POST'])
 def takeoff():
     drone_controller.takeoff()
-    flash("Drone is taking off!", "info")
     global drone_in_flight  # Use the global keyword
+    message = 'Drone is taking off!'
     drone_in_flight = True
     print(drone_in_flight)
-    return redirect(url_for('index'))
-    #return "Drone is taking off!"
+    return jsonify(message)
 
 @app.route('/land', methods=['POST'])
 def land():
     drone_controller.landing()
-    flash("Drone is landing!", "info")
+    message = "Drone is landing!"
     global drone_in_flight  # Use the global keyword
     drone_in_flight = False
-    return redirect(url_for('index'))
-    #return "Drone is landing!"
+    return jsonify(message)
 
 @app.route('/read_scan_code')
 def read_scan_code():
-    #scan_code_detected = drone_controller.read_scan_code()
-    # read_the_code = drone_controller.drone_ar.renew_frame(drone_controller.drone.read_video_frame(), 
-    #                                                       drone_controller.drone_ar.frame_no, 
-    #                                                       0, 
-    #                                                       'MANUAL', 
-    #                                                       0)
     detected_scan_code = drone_controller.drone_ar.get_latest_barcode()
     app.logger.debug("Detected barcode: %s", detected_scan_code)  # Log the value
 
@@ -100,14 +92,15 @@ def automated_commands():
     if drone_in_flight:
         return jsonify({'message': 'Drone is already in flight'}), 400
 
-    commands = request.form.get('commands')
-    # data = request.get_json()
-    # commands = data.get('commands')
-    if not commands:
-        return jsonify({'message': 'No commands provided'}), 400
+    # commands = request.form.get('commands')
+ 
+    
+    # if not commands:
+    #     return jsonify({'message': 'No commands provided'}), 400
 
-    commandArray = commands.split("\n")
-
+    # commandArray = commands.split("\n")
+    commandArray = request.get_json()
+    print(commandArray)
     drone_controller.takeoff()
     drone_in_flight = True
     # flash("Start mission!", "info")
@@ -134,14 +127,22 @@ def automated_commands():
     time.sleep(5)
     drone_controller.landing()
     drone_in_flight = False
-    flash("Mission finish!", "info")
-    return redirect(url_for('index'))
-
+    # flash("Mission finish!", "info")
+    return jsonify({'message': 'Automated successfully'}), 200
 @app.route('/test', methods=['GET'])
 def test():
     data = {"message":"Drone is ON TEST!"}
-    return jsonify(data);
+    return jsonify(data)
 
+@app.route('/automate', methods=['POST'])
+def submit_form():
+    input_array_values = request.form.getlist('input_array_name[]')
+    print(input_array_values)
+    # Process the data as needed
+    result_data = {"message": "Form submitted successfully!", "values": input_array_values}
+
+    # Return a JSON response
+    return jsonify(result_data)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True)
+    app.run(debug=True)
  

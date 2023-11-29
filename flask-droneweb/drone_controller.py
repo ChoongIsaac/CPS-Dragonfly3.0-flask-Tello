@@ -1,5 +1,6 @@
 import sys
-sys.path.append('/home/dragonfly/Documents/GitHub/DragonFly/Development-Code/DJI Tello/New UI (Python 3.6.9)')
+#sys.path.append('/home/dragonfly/Documents/GitHub/DragonFly/Development-Code/DJI Tello/New UI (Python 3.6.9)')
+sys.path.append('/home/dragonfly/Documents/Development/tello-flask/CPS-Dragonfly3.0-flask-Tello')
 
 import logging
 import tello 
@@ -34,13 +35,6 @@ class DroneController:
         while True:
             frame_h264 = self.drone.read_video_frame()
             if frame_h264 is not None:
-                # logging.debug('Sending video frame')
-                # print("Frame dimensions:", frame_h264.shape)
-                # print("Frame data type:", frame_h264.dtype)
-
-                #decode h264 frames
-                #frame_bgr = cv2.cvtColor(frame_h264, cv2.COLOR_YUV2BGR_I420)
-                #convert bgr frames to JPEG format
                 self.drone_ar.renew_frame(self.drone.read_video_frame(), 
                                           self.drone_ar.frame_no, 
                                           0, 

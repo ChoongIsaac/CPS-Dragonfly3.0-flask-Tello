@@ -3,46 +3,41 @@ from drone_controller import drone_controller
 from flask_cors import CORS
 import threading
 import time
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here" 
 CORS(app)
+socketio = SocketIO(app)
 drone_in_flight = False
+message = ''
 #drone_controller = DroneController()
 
-@app.route('/')
-def index():
+@app.route('/battery', methods=['GET'])
+def get_battery_status():
     battery_status = drone_controller.get_battery()
-    return render_template('index.html',battery_status=battery_status)
-
+    socketio.emit('battery_status', battery_status)
+    return jsonify(battery_status)
 
 @app.route('/takeoff', methods=['POST'])
 def takeoff():
     drone_controller.takeoff()
-    flash("Drone is taking off!", "info")
     global drone_in_flight  # Use the global keyword
+    message = 'Drone is taking off!'
     drone_in_flight = True
     print(drone_in_flight)
-    return redirect(url_for('index'))
-    #return "Drone is taking off!"
+    return jsonify(message)
 
 @app.route('/land', methods=['POST'])
 def land():
     drone_controller.landing()
-    flash("Drone is landing!", "info")
+    message = "Drone is landing!"
     global drone_in_flight  # Use the global keyword
     drone_in_flight = False
-    return redirect(url_for('index'))
-    #return "Drone is landing!"
+    return jsonify(message)
 
 @app.route('/read_scan_code')
 def read_scan_code():
-    #scan_code_detected = drone_controller.read_scan_code()
-    # read_the_code = drone_controller.drone_ar.renew_frame(drone_controller.drone.read_video_frame(), 
-    #                                                       drone_controller.drone_ar.frame_no, 
-    #                                                       0, 
-    #                                                       'MANUAL', 
-    #                                                       0)
     detected_scan_code = drone_controller.drone_ar.get_latest_barcode()
     app.logger.debug("Detected barcode: %s", detected_scan_code)  # Log the value
 
@@ -142,6 +137,13 @@ def test():
     data = {"message":"Drone is ON TEST!"}
     return jsonify(data)
 
+@socketio.on('takeoff')
+def handle_takeoff():
+    # Add logic to handle the takeoff command for the drone
+    print("Drone is taking off!")
+
+    # You can send a confirmation back to the frontend if needed
+    socketio.emit('takeoff_response', {'status': 'success'})
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True)
+     socketio.run(app)
  
