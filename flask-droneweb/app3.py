@@ -3,6 +3,10 @@ from drone_controller import drone_controller
 from flask_cors import CORS
 import threading
 import time
+import requests
+import firebase_admin
+from firebase_admin import credentials, firestore_async
+
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here" 
@@ -10,6 +14,11 @@ CORS(app)
 drone_in_flight = False
 message = ''
 #drone_controller = DroneController()
+
+# Use a service account.
+cred = credentials.Certificate('cps-dragonfly-96f4336104bf.json')
+firebase_app = firebase_admin.initialize_app(cred)
+db = firestore_async.client()
 
 @app.route('/battery', methods=['GET'])
 def get_battery_status():
@@ -40,6 +49,10 @@ def read_scan_code():
 
     return detected_scan_code
 
+@app.route('/reset_scan_code', methods=['POST'])
+def reset_scan_code():
+    drone_controller.drone_ar.code_latest = ''
+    return jsonify({'message': 'Scan code is reset'}), 200
 
 
 @app.route('/video_feed')
@@ -127,22 +140,61 @@ def automated_commands():
     time.sleep(5)
     drone_controller.landing()
     drone_in_flight = False
-    # flash("Mission finish!", "info")
     return jsonify({'message': 'Automated successfully'}), 200
+
 @app.route('/test', methods=['GET'])
 def test():
     data = {"message":"Drone is ON TEST!"}
     return jsonify(data)
 
-@app.route('/automate', methods=['POST'])
-def submit_form():
-    input_array_values = request.form.getlist('input_array_name[]')
-    print(input_array_values)
-    # Process the data as needed
-    result_data = {"message": "Form submitted successfully!", "values": input_array_values}
+def check_internet_connection():
+    try:
+        response = requests.get("http://www.google.com", timeout=5)
+        response.raise_for_status()
+        print('there is internet connection')
+        return True
+    except requests.RequestException:
+        return False
 
-    # Return a JSON response
-    return jsonify(result_data)
+def upload_to_firebase(qr_codes, flight_path):
+    qr_codes_ref = db.collection('inventory_checks')
+
+    # Add a document for the inventory check
+    inventory_check_data = {
+        "Scanned_qr_codes": qr_codes,
+        "Flight_path": flight_path
+    }
+
+    # Add the inventory check data to Firestore
+    qr_codes_ref.add(inventory_check_data)
+
+
+def save_to_local_backup(qr_codes):
+    # Save the QR code data to a local file
+    with open("local_backup.txt", "a") as file:
+        file.write(qr_codes + "\n")
+
+@app.route('/upload_result', methods=['POST'])
+def upload_scanned_result():
+    if not check_internet_connection():
+        try:
+            qr_code_data = request.json.get('qr_code_data')
+            save_to_local_backup(qr_code_data)
+            return jsonify({"message": "QR code saved to local backup"}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    try:
+        # if Internet connection is available, try to upload to Firebase
+        qr_code_data = request.json.get('qr_code_data')
+        flight_path_data = request.json.get('flight_path_data')
+        upload_to_firebase(qr_code_data,flight_path_data)
+
+        return jsonify({"message": "QR code uploaded successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True)
  
