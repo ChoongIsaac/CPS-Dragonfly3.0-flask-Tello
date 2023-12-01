@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, flash, redirect, url_for,Response,jsonify
+import mysqlx
 from drone_controller import drone_controller
 from flask_cors import CORS
 import threading
@@ -19,6 +20,12 @@ message = ''
 cred = credentials.Certificate('cps-dragonfly-96f4336104bf.json')
 firebase_app = firebase_admin.initialize_app(cred)
 db = firestore_async.client()
+
+host = "127.0.0.1"
+user = "root"
+password = "qwe123qwe"
+database = "dragonfly"
+
 
 @app.route('/battery', methods=['GET'])
 def get_battery_status():
@@ -147,6 +154,8 @@ def test():
     data = {"message":"Drone is ON TEST!"}
     return jsonify(data)
 
+##################################################################################################
+###################Still under development########################################################
 def check_internet_connection():
     try:
         response = requests.get("http://www.google.com", timeout=5)
@@ -194,6 +203,56 @@ def upload_scanned_result():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+# Function to execute SELECT queries
+def execute_select_query(scan_code):
+    try:
+        connection = mysqlx.connector.connect(
+            host=host,
+            user=user,
+            password=password,
+            database=database
+        )
+
+        cursor = connection.cursor()
+
+        # Query to retrieve movement instruction based on scan code
+        query = "SELECT movement_instruction FROM drone_commands WHERE scan_code = %s"
+        cursor.execute(query, (scan_code,))
+
+        result = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+
+        return result
+
+    except mysqlx.connector.Error as err:
+        # Handle database errors
+        print(f"Database error: {err}")
+        return None
+
+@app.route('/qrcode_control', methods=['POST'])
+def qrcode_control():
+    try:
+        scan_code = request.form['scan_code']
+
+        # Call the execute_select_query function
+        result = execute_select_query(scan_code)
+
+        if result:
+            movement_instruction = result[0][0]
+            # Code to control the drone based on movement_instruction
+            # Implement your drone control logic here
+
+            return f"Drone movement: {movement_instruction}"
+
+        return "Scan code not found"
+
+    except Exception as e:
+        # Handle other exceptions
+        print(f"Error: {e}")
+        return "Internal Server Error"
     
 if __name__ == '__main__':
     app.run(debug=True)
