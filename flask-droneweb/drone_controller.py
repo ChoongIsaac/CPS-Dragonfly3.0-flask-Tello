@@ -12,6 +12,7 @@ class DroneController:
     def __init__(self):
         self.drone = None
         self.drone_ar = Drone_AR_Flight()
+        self.mode = 'manual'
 
     def initialize_drone(self):
         if self.drone is None:

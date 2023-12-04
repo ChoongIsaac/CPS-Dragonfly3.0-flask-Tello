@@ -217,7 +217,7 @@ def execute_select_query(scan_code):
         cursor = connection.cursor()
 
         # Query to retrieve movement instruction based on scan code
-        query = "SELECT movement_instruction FROM drone_commands WHERE scan_code = %s"
+        query = "SELECT command FROM items WHERE item_code = %s"
         cursor.execute(query, (scan_code,))
 
         result = cursor.fetchall()
