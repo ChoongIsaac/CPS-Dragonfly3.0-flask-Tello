@@ -61,6 +61,11 @@ COLOR_RED = (255,0,0)
 COLOR_GREEN = (0,255,0)
 COLOR_YELLOW = (255,255,0)
 COLOR_WHITE = (255,255,255)
+KNOWN_QR_SIZE = 3.543
+#KNOWN_QR_SIZE = 2.16535
+KNOWN_DISTANCE = 25.1
+script_directory = os.path.dirname(os.path.realpath(__file__))
+image_path = os.path.join(script_directory, "reference_image.jpg")
 
 class Drone_AR_Flight:
     def __init__(self):
@@ -92,6 +97,12 @@ class Drone_AR_Flight:
 
         self.font = ImageFont.truetype(TTFFONT,32)
         self.fontbold = ImageFont.truetype(TTFFONTBOLD,32)
+
+        self.known_qr_size = KNOWN_QR_SIZE
+        self.focal_length = 0
+        self.known_distance = KNOWN_DISTANCE
+        self.image = cv2.imread(image_path)
+
 
     def renew_frame(self, frame, frame_no, now_height, ar_cmd, ar_val):
         self.now_height_cm = now_height
@@ -287,6 +298,7 @@ class Drone_AR_Flight:
     def _try_read_barcode(self):
         decoded = decode(self.gray_frame)
         if len(decoded) > 0:
+            (x,y,w,h) = decoded[0].rect
             rcode = str(decoded[0].type) + ':' + decoded[0].data.decode('utf-8')
             rrect = decoded[0].rect
             self.code_latest = rcode
@@ -294,7 +306,15 @@ class Drone_AR_Flight:
             self.beep.on()
             self.code_latest_view = 5
             self.code_flag = False
+            #self.focalLength = (w * self.known_distance) / self.known_qr_size
+            self._find_focal_length()
+            inches = self._calculate_distance_to_camera(self.known_qr_size, self.focal_length, w)
+            # distance = inches * 2.54
             print('found code:', self.code_latest)
+            print('distance',inches)
+            cv2.putText(self.frame, "%.2fcm" % inches,
+                    (self.frame.shape[1] - 200, self.frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX,
+                    1.3, (0, 255, 0), 3)
 
     def get_latest_barcode(self):
         return self.code_latest
@@ -454,5 +474,19 @@ class Drone_AR_Flight:
         self.chase_marker = int(-1)
         return
 
+    def _find_focal_length(self):
+        gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        foundBarcode = decode(gray)
+        if foundBarcode:
+        # loop the found barcode and get the width (in pixels) for the QR code in the picture, then calculate the focal length
+            (x,y,w,h) = foundBarcode[0].rect
+            self.focal_length = (w * self.known_distance) / self.known_qr_size
+        else:
+            print("No barcodes found.")
+        
+        print(self.focal_length)
+        
+    def _calculate_distance_to_camera(self, knownWidth, focalLength, perWidth):
+        return (knownWidth * focalLength) / perWidth
 #eof
 
