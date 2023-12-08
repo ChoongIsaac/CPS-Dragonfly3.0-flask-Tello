@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, flash, redirect, url_for,Response,jsonify
-import mysqlx
+import mysql.connector
 from drone_controller import drone_controller
 from flask_cors import CORS
 import threading
@@ -205,9 +205,9 @@ def upload_scanned_result():
         return jsonify({"error": str(e)}), 500
     
 # Function to execute SELECT queries
-def execute_select_query(scan_code):
+def get_command(scan_code):
     try:
-        connection = mysqlx.connector.connect(
+        connection = mysql.connector.connect(
             host=host,
             user=user,
             password=password,
@@ -220,39 +220,52 @@ def execute_select_query(scan_code):
         query = "SELECT command FROM items WHERE item_code = %s"
         cursor.execute(query, (scan_code,))
 
-        result = cursor.fetchall()
+        result = cursor.fetchone()
 
         cursor.close()
         connection.close()
+        command = str(result[0])
+        return command
 
-        return result
-
-    except mysqlx.connector.Error as err:
+    except mysql.connector.Error as err:
         # Handle database errors
         print(f"Database error: {err}")
         return None
 
 @app.route('/qrcode_control', methods=['POST'])
 def qrcode_control():
+    # drone_controller.takeoff()
+    # time.sleep(3)
     try:
-        scan_code = request.form['scan_code']
+        latest_scan_code = drone_controller.drone_ar.get_latest_barcode()
+       
+        # if len(latest_scan_code)>0:
+        #     detected = True
+        # else:
+        #     detected = False        
+        while(len(latest_scan_code)>0):
+             # Call the execute_select_query function
+            command = get_command(latest_scan_code)
+            if command:
+                if command != 'land':
+                    print(command)
+                    print(latest_scan_code)
+                    time.sleep(5)
+                else:
+                    print(command)
+                    drone_controller.drone_ar.code_latest = ''
+                    break
+            else: 
+                #landing
+                return jsonify(f"This QR has no {command}")
+            
+            latest_scan_code = drone_controller.drone_ar.get_latest_barcode()
 
-        # Call the execute_select_query function
-        result = execute_select_query(scan_code)
-
-        if result:
-            movement_instruction = result[0][0]
-            # Code to control the drone based on movement_instruction
-            # Implement your drone control logic here
-
-            return f"Drone movement: {movement_instruction}"
-
-        return "Scan code not found"
-
+        return jsonify("QR Guilded mode")
     except Exception as e:
         # Handle other exceptions
         print(f"Error: {e}")
-        return "Internal Server Error"
+        return jsonify("Internal Server Error")
     
 if __name__ == '__main__':
     app.run(debug=True)

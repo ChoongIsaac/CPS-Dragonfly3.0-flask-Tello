@@ -299,7 +299,8 @@ class Drone_AR_Flight:
         decoded = decode(self.gray_frame)
         if len(decoded) > 0:
             (x,y,w,h) = decoded[0].rect
-            rcode = str(decoded[0].type) + ':' + decoded[0].data.decode('utf-8')
+            # rcode = str(decoded[0].type) + ':' + decoded[0].data.decode('utf-8')
+            rcode = decoded[0].data.decode('utf-8')
             rrect = decoded[0].rect
             self.code_latest = rcode
             self.code_latest_rect = rrect
