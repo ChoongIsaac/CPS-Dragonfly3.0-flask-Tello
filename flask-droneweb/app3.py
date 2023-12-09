@@ -26,6 +26,7 @@ user = "root"
 password = "qwe123qwe"
 database = "dragonfly"
 
+flight_path = []
 
 @app.route('/battery', methods=['GET'])
 def get_battery_status():
@@ -38,6 +39,7 @@ def takeoff():
     global drone_in_flight  # Use the global keyword
     message = 'Drone is taking off!'
     drone_in_flight = True
+    flight_path.append("takeoff")
     print(drone_in_flight)
     return jsonify(message)
 
@@ -47,6 +49,8 @@ def land():
     message = "Drone is landing!"
     global drone_in_flight  # Use the global keyword
     drone_in_flight = False
+    flight_path.append("land")
+
     return jsonify(message)
 
 @app.route('/read_scan_code')
@@ -85,20 +89,28 @@ def send_command():
             # Your existing command handling logic here
             if command == 'move_up':
                 drone_controller.drone.move_up(25)
+                flight_path.append("up 25")
             elif command == 'move_down':
                 drone_controller.drone.move_down(25)
+                flight_path.append("down 25")
             elif command == 'move_left':
                 drone_controller.drone.move_left(25)
+                flight_path.append("left 25")
             elif command == 'move_right':
                 drone_controller.drone.move_right(25)
+                flight_path.append("right 25")
             elif command == 'move_forward':
                 drone_controller.drone.move_forward(25)
+                flight_path.append("forward 25")
             elif command == 'move_backward':
                 drone_controller.drone.move_backward(25)
+                flight_path.append("backward 25")
             elif command == 'rotate_left':
                 drone_controller.drone.rotate_ccw(25)
+                flight_path.append("rotate_left 25")
             elif command == 'rotate_right':
                 drone_controller.drone.rotate_cw(25)
+                flight_path.append("rotate_left 25")
             return jsonify({'message': 'Command executed successfully'}), 200
         else:
             return jsonify({'message': 'Invalid command'}), 400
@@ -132,13 +144,16 @@ def automated_commands():
             direction, distance = parts
             if direction in ['up', 'down', 'left', 'right', 'forward', 'backward']:
                 drone_controller.drone.move(direction, int(distance))
+                flight_path.append(parts)
                 time.sleep(5)
                 # print(f'Direction: {direction}, Value: {distance}')
             elif direction == 'rotate_ccw':
                 drone_controller.drone.rotate_ccw(int(distance))
+                flight_path.append(f"rotate_left {distance}")
                 time.sleep(5)
             elif direction == 'rotate_cw':
                 drone_controller.drone.rotate_cw(int(distance))
+                flight_path.append(f"rotate_right {distance}")
                 time.sleep(5)
             else:
                 return jsonify({'message': f'Invalid direction: {direction}'}), 400
@@ -203,16 +218,55 @@ def upload_scanned_result():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-# Function to execute SELECT queries
-def get_command(scan_code):
+
+@app.route('/save_scanned_result',method=['POST'])
+def save_scanned_result():
     try:
+        connection = create_mysql_connection()
+        # Create a cursor object to interact with the database
+        cursor = connection.cursor()
+
+        detected_qr_codes = request.get_json()
+        # Insert data into the 'people' table
+        query = "INSERT INTO scanned_result (name) VALUES (%s)"
+        cursor.execute(query, detected_qr_codes)
+
+        # Commit the changes to the database
+        connection.commit()
+
+        print("Data inserted successfully.")
+    except:
+        print("this is error")
+    finally:
+        # Close the cursor and connection, regardless of success or failure
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+#function to create mysql connection
+def create_mysql_connection():
+    try:
+        # Establish a connection to the MySQL server
         connection = mysql.connector.connect(
             host=host,
             user=user,
             password=password,
             database=database
         )
+
+        print("Database connection established.")
+        return connection
+
+    except mysql.connector.Error as err:
+        # Handle database connection errors
+        print(f"Database connection error: {err}")
+        return None
+    
+    
+# Function to execute SELECT queries
+def get_command(scan_code):
+    try:
+        connection = create_mysql_connection()
 
         cursor = connection.cursor()
 
@@ -266,7 +320,11 @@ def qrcode_control():
         # Handle other exceptions
         print(f"Error: {e}")
         return jsonify("Internal Server Error")
-    
+
+@app.route('/flight_path', methods=['GET'])
+def get_flight_path():
+    return jsonify(flight_path)
+
 if __name__ == '__main__':
     app.run(debug=True)
  
