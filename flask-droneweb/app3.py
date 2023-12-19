@@ -219,30 +219,30 @@ def upload_scanned_result():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/save_scanned_result',method=['POST'])
-def save_scanned_result():
-    try:
-        connection = create_mysql_connection()
-        # Create a cursor object to interact with the database
-        cursor = connection.cursor()
+# @app.route('/save_scanned_result',method=['POST'])
+# def save_scanned_result():
+#     try:
+#         connection = create_mysql_connection()
+#         # Create a cursor object to interact with the database
+#         cursor = connection.cursor()
 
-        detected_qr_codes = request.get_json()
-        # Insert data into the 'people' table
-        query = "INSERT INTO scanned_result (name) VALUES (%s)"
-        cursor.execute(query, detected_qr_codes)
+#         detected_qr_codes = request.get_json()
+#         # Insert data into the 'people' table
+#         query = "INSERT INTO scanned_result (name) VALUES (%s)"
+#         cursor.execute(query, detected_qr_codes)
 
-        # Commit the changes to the database
-        connection.commit()
+#         # Commit the changes to the database
+#         connection.commit()
 
-        print("Data inserted successfully.")
-    except:
-        print("this is error")
-    finally:
-        # Close the cursor and connection, regardless of success or failure
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+#         print("Data inserted successfully.")
+#     except:
+#         print("this is error")
+#     finally:
+#         # Close the cursor and connection, regardless of success or failure
+#         if cursor:
+#             cursor.close()
+#         if connection:
+#             connection.close()
 #function to create mysql connection
 def create_mysql_connection():
     try:
@@ -286,11 +286,12 @@ def get_command(scan_code):
         print(f"Database error: {err}")
         return None
 
-@app.route('/qrcode_control', methods=['POST'])
-def qrcode_control():
-    # drone_controller.takeoff()
-    # time.sleep(3)
+@app.route('/qrcode_navigate', methods=['POST'])
+def qrcode_navigate():
     try:
+        drone_controller.mode = 'OR_Navigated'
+        drone_controller.takeoff()
+        prev_scan_code = ''
         latest_scan_code = drone_controller.drone_ar.get_latest_barcode()
        
         # if len(latest_scan_code)>0:
@@ -298,16 +299,43 @@ def qrcode_control():
         # else:
         #     detected = False        
         while(len(latest_scan_code)>0):
-             # Call the execute_select_query function
+            if latest_scan_code == prev_scan_code:
+                time.sleep(1)
+                break
+            prev_scan_code = latest_scan_code
+            
+            # Call the execute_select_query function
             command = get_command(latest_scan_code)
+            parts = command.split()
+
             if command:
                 if command != 'land':
                     print(command)
+                    if len(parts) == 2:
+                        direction, distance = parts
+                        if direction in ['up', 'down', 'left', 'right', 'forward', 'backward']:
+                            drone_controller.drone.move(direction, int(distance))
+                            flight_path.append(parts)
+                            time.sleep(5)
+                        elif direction == 'rotate_ccw':
+                            drone_controller.drone.rotate_ccw(int(distance))
+                            flight_path.append(f"rotate_left {distance}")
+                            time.sleep(5)
+                        elif direction == 'rotate_cw':
+                            drone_controller.drone.rotate_cw(int(distance))
+                            flight_path.append(f"rotate_right {distance}")
+                            time.sleep(5)
+                        else:
+                            return jsonify({'message': f'Invalid direction: {direction}'}), 400
+                    else:
+                        return jsonify({'message': f'Invalid command format: {command}'}), 400
                     print(latest_scan_code)
                     time.sleep(5)
                 else:
                     print(command)
+                    drone_controller.landing()
                     drone_controller.drone_ar.code_latest = ''
+                    drone_controller.mode = 'manual'
                     break
             else: 
                 #landing
@@ -315,7 +343,7 @@ def qrcode_control():
             
             latest_scan_code = drone_controller.drone_ar.get_latest_barcode()
 
-        return jsonify("QR Guilded mode")
+        return jsonify("QR Navigation mode")
     except Exception as e:
         # Handle other exceptions
         print(f"Error: {e}")
