@@ -32,6 +32,11 @@ flight_path = []
 def get_battery_status():
     battery_status = drone_controller.get_battery()
     return jsonify(battery_status)
+@app.route('/reset_flight_path',methods=['POST'])
+def reset_flight_path():
+    flight_path = []
+    return jsonify({'message': 'flight path is reset'}), 200
+
 
 @app.route('/takeoff', methods=['POST'])
 def takeoff():
@@ -88,28 +93,28 @@ def send_command():
             # Process drone movement commands
             # Your existing command handling logic here
             if command == 'move_up':
-                drone_controller.drone.move_up(25)
+                drone_controller.drone.move_up(40)
                 flight_path.append("up 25")
             elif command == 'move_down':
-                drone_controller.drone.move_down(25)
+                drone_controller.drone.move_down(40)
                 flight_path.append("down 25")
             elif command == 'move_left':
-                drone_controller.drone.move_left(25)
+                drone_controller.drone.move_left(40)
                 flight_path.append("left 25")
             elif command == 'move_right':
-                drone_controller.drone.move_right(25)
+                drone_controller.drone.move_right(40)
                 flight_path.append("right 25")
             elif command == 'move_forward':
-                drone_controller.drone.move_forward(25)
+                drone_controller.drone.move_forward(40)
                 flight_path.append("forward 25")
             elif command == 'move_backward':
-                drone_controller.drone.move_backward(25)
+                drone_controller.drone.move_backward(40)
                 flight_path.append("backward 25")
             elif command == 'rotate_left':
-                drone_controller.drone.rotate_ccw(25)
+                drone_controller.drone.rotate_ccw(40)
                 flight_path.append("rotate_left 25")
             elif command == 'rotate_right':
-                drone_controller.drone.rotate_cw(25)
+                drone_controller.drone.rotate_cw(40)
                 flight_path.append("rotate_left 25")
             return jsonify({'message': 'Command executed successfully'}), 200
         else:
@@ -136,7 +141,7 @@ def automated_commands():
     drone_controller.takeoff()
     drone_in_flight = True
     # flash("Start mission!", "info")
-    time.sleep(10)
+    time.sleep(5)
 
     for command in commandArray:
         parts = command.split()
@@ -291,6 +296,7 @@ def qrcode_navigate():
     try:
         drone_controller.mode = 'OR_Navigated'
         drone_controller.takeoff()
+        time.sleep(10)
         prev_scan_code = ''
         latest_scan_code = drone_controller.drone_ar.get_latest_barcode()
        
@@ -298,15 +304,19 @@ def qrcode_navigate():
         #     detected = True
         # else:
         #     detected = False        
-        while(len(latest_scan_code)>0):
+        # while(len(latest_scan_code)>0):
+        while(True):
+
             if latest_scan_code == prev_scan_code:
-                time.sleep(1)
+                drone_controller.landing()
                 break
             prev_scan_code = latest_scan_code
+            if len(latest_scan_code) > 0:
             
-            # Call the execute_select_query function
-            command = get_command(latest_scan_code)
-            parts = command.split()
+                # Call the execute_select_query function
+                command = get_command(latest_scan_code)
+                time.sleep(3)
+                parts = command.split()
 
             if command:
                 if command != 'land':
@@ -330,7 +340,7 @@ def qrcode_navigate():
                     else:
                         return jsonify({'message': f'Invalid command format: {command}'}), 400
                     print(latest_scan_code)
-                    time.sleep(5)
+                    # time.sleep(5)
                 else:
                     print(command)
                     drone_controller.landing()
@@ -339,11 +349,49 @@ def qrcode_navigate():
                     break
             else: 
                 #landing
+                drone_controller.landing()
+                drone_controller.drone_ar.code_latest = ''
                 return jsonify(f"This QR has no {command}")
             
             latest_scan_code = drone_controller.drone_ar.get_latest_barcode()
 
         return jsonify("QR Navigation mode")
+    except Exception as e:
+        # Handle other exceptions
+        print(f"Error: {e}")
+        return jsonify("Internal Server Error")
+    
+@app.route('/qrcode_control', methods=['POST'])
+def qrcode_control():
+    try:
+        # # drone_controller.mode = 'OR_Navigated'
+        # # drone_controller.takeoff()
+        # prev_scan_code = ''
+        latest_scan_code = drone_controller.drone_ar.get_latest_barcode()
+
+        # if len(latest_scan_code)>0:
+        #     detected = True
+        # else:
+        #     detected = False        
+        while(len(latest_scan_code)>0):
+             # Call the execute_select_query function
+            command = get_command(latest_scan_code)
+            if command:
+                if command != 'land':
+                    print(command)
+                    print(latest_scan_code)
+                    # time.sleep(5)
+                else:
+                    print(command)
+                    drone_controller.drone_ar.code_latest = ''
+                    break
+            else: 
+                #landing
+                return jsonify(f"This QR has no {command}")
+
+            latest_scan_code = drone_controller.drone_ar.get_latest_barcode()
+
+        return jsonify("QR Guilded mode")
     except Exception as e:
         # Handle other exceptions
         print(f"Error: {e}")
