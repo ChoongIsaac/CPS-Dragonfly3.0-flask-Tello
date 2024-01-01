@@ -8,7 +8,7 @@ import cv2
 from drone_ar_flight import Drone_AR_Flight
 logging.basicConfig(level=logging.DEBUG)
 
-class DroneController:
+class DroneConnection:
     def __init__(self):
         self.drone = None
         self.drone_ar = Drone_AR_Flight()
@@ -61,4 +61,4 @@ class DroneController:
             self.drone.close()
 
 # Create an instance of DroneController
-drone_controller = DroneController()
+drone_connection = DroneConnection()
