@@ -26,7 +26,7 @@ class DroneApp:
         self.drone_connection.mode = 'manual'
 
         self.setup_routes()
-
+    #function to setup API Route
     def setup_routes(self):
         self.app.route('/battery', methods=['GET'])(self.get_battery_status)
         self.app.route('/reset_flight_path', methods=['POST'])(self.reset_flight_path)
@@ -77,6 +77,7 @@ class DroneApp:
         return Response(self.drone_connection.video_stream_generator(),
                         mimetype='multipart/x-mixed-replace; boundary=frame')
 
+    #function to send command to tello in manual mode
     def send_command(self):
         data = request.get_json()
         command = data.get('command')
@@ -121,6 +122,7 @@ class DroneApp:
         commandArray = request.get_json()
         print(commandArray)
         self.drone_connection.takeoff()
+        self.flight_path.append("takeoff")
         self.drone_in_flight = True
         time.sleep(5)
 
@@ -141,6 +143,7 @@ class DroneApp:
                 
         time.sleep(5)
         self.drone_connection.landing()
+        self.flight_path.append("land")
         self.drone_in_flight = False
         return jsonify({'message': 'Automated successfully'}), 200
 
@@ -161,6 +164,7 @@ class DroneApp:
             # Handle database connection errors
             print(f"Database connection error: {err}")
             return None
+        
     def get_command(self,scan_code):
         try:
             connection = self.create_mysql_connection()
@@ -186,11 +190,14 @@ class DroneApp:
         try:
             self.drone_connection.mode = 'OR_Navigated'
             self.drone_connection.takeoff()
+            self.flight_path.append("takeoff")
+            #must execute this to have time interval
             time.sleep(5)
             prev_scan_code = ''
             latest_scan_code = self.drone_connection.drone_ar.get_latest_barcode()
 
             while True:
+                #check latest scan code is the same with prev
                 if latest_scan_code == prev_scan_code:
                     self.drone_connection.landing()
                     break
@@ -221,11 +228,13 @@ class DroneApp:
                     else:
                         print(command)
                         self.drone_connection.landing()
+                        self.flight_path.append("land")
                         self.drone_connection.drone_ar.code_latest = ''
                         self.drone_connection.mode = 'manual'
                         break
                 else:
                     self.drone_connection.landing()
+                    self.flight_path.append("land")
                     self.drone_connection.drone_ar.code_latest = ''
                     return jsonify(f"This QR has no {command}")
 

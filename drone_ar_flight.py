@@ -61,11 +61,11 @@ COLOR_RED = (255,0,0)
 COLOR_GREEN = (0,255,0)
 COLOR_YELLOW = (255,255,0)
 COLOR_WHITE = (255,255,255)
-KNOWN_QR_SIZE = 3.543
+KNOWN_QR_SIZE = 2.67717
 #KNOWN_QR_SIZE = 2.16535
-KNOWN_DISTANCE = 25.1
+KNOWN_DISTANCE = 17.3228
 script_directory = os.path.dirname(os.path.realpath(__file__))
-image_path = os.path.join(script_directory, "reference_image.jpg")
+image_path = os.path.join(script_directory, "reference_image_2.jpeg")
 
 class Drone_AR_Flight:
     def __init__(self):
@@ -310,12 +310,16 @@ class Drone_AR_Flight:
             #self.focalLength = (w * self.known_distance) / self.known_qr_size
             self._find_focal_length()
             inches = self._calculate_distance_to_camera(self.known_qr_size, self.focal_length, w)
-            # distance = inches * 2.54
-            print('found code:', self.code_latest)
-            print('distance',inches)
-            cv2.putText(self.frame, "%.2fcm" % inches,
+            centimeter = 0
+            centimeter = inches * 2.54
+            if centimeter > 42:
+                cv2.putText(self.frame, "%.2fcm" % centimeter,
                     (self.frame.shape[1] - 200, self.frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX,
                     1.3, (0, 255, 0), 3)
+            else:
+                cv2.putText(self.frame, "%.2fcm" % centimeter,
+                    (self.frame.shape[1] - 200, self.frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX,
+                    1.3, (0, 0, 255), 3)
 
     def get_latest_barcode(self):
         return self.code_latest
