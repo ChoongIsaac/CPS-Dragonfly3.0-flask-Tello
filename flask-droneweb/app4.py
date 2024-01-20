@@ -39,6 +39,7 @@ class DroneApp:
         self.app.route('/automated', methods=['POST'])(self.automated_commands)
         self.app.route('/qrcode_navigate', methods=['POST'])(self.qrcode_navigate)
         self.app.route('/flight_path', methods=['GET'])(self.get_flight_path)
+        self.app.route('/reset_flight_path', methods=['POST'])(self.reset_flight_path)
 
     def run(self):
         self.app.run(debug=True)
@@ -247,6 +248,10 @@ class DroneApp:
 
     def get_flight_path(self):
         return jsonify(self.flight_path)
+    
+    def reset_flight_path(self):
+        self.flight_path = [];
+        return jsonify({'message': 'flight path is reset'}), 200
 
 if __name__ == '__main__':
     drone_app = DroneApp()
